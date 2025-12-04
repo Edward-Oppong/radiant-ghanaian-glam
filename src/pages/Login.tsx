@@ -1,20 +1,37 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Login() {
   const navigate = useNavigate();
+  const { signIn, user } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      navigate('/account');
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    toast.success('Welcome back!');
-    navigate('/account');
+
+    const { error } = await signIn(email, password);
+
+    if (error) {
+      toast.error(error.message || 'Failed to sign in');
+    } else {
+      toast.success('Welcome back!');
+      navigate('/account');
+    }
+
     setIsLoading(false);
   };
 
@@ -40,6 +57,8 @@ export default function Login() {
                 <input
                   type="email"
                   required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="w-full h-12 pl-12 pr-4 bg-secondary rounded-xl border-0 focus:ring-2 focus:ring-accent outline-none"
                   placeholder="your@email.com"
                 />
@@ -53,6 +72,8 @@ export default function Login() {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="w-full h-12 pl-12 pr-12 bg-secondary rounded-xl border-0 focus:ring-2 focus:ring-accent outline-none"
                   placeholder="••••••••"
                 />

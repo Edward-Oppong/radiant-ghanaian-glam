@@ -2,16 +2,27 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 export default function ForgotPassword() {
+  const { resetPassword } = useAuth();
+  const [email, setEmail] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsSubmitted(true);
+
+    const { error } = await resetPassword(email);
+
+    if (error) {
+      toast.error(error.message || 'Failed to send reset email');
+    } else {
+      setIsSubmitted(true);
+    }
+
     setIsLoading(false);
   };
 
@@ -37,6 +48,8 @@ export default function ForgotPassword() {
                   <input
                     type="email"
                     required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="w-full h-12 pl-12 pr-4 bg-background rounded-xl border-0 focus:ring-2 focus:ring-accent outline-none"
                     placeholder="your@email.com"
                   />
