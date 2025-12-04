@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X, Search, ShoppingBag, Heart, User } from 'lucide-react';
+import { Menu, X, Search, ShoppingBag, Heart, User, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCartStore } from '@/store/cartStore';
 import { useWishlistStore } from '@/store/wishlistStore';
+import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 
 const navLinks = [
@@ -20,6 +21,7 @@ export function Navbar() {
   const cartItemCount = useCartStore((state) => state.getItemCount());
   const wishlistCount = useWishlistStore((state) => state.items.length);
   const openCart = useCartStore((state) => state.openCart);
+  const { user } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur-md border-b border-border">
@@ -85,14 +87,24 @@ export function Navbar() {
               )}
             </Link>
 
-            {/* Account */}
-            <Link
-              to="/account"
-              className="hidden sm:flex p-2 hover:bg-primary rounded-lg transition-colors"
-              aria-label="Account"
-            >
-              <User className="w-5 h-5" />
-            </Link>
+            {/* Account / Login */}
+            {user ? (
+              <Link
+                to="/account"
+                className="hidden sm:flex p-2 hover:bg-primary rounded-lg transition-colors"
+                aria-label="Account"
+              >
+                <User className="w-5 h-5" />
+              </Link>
+            ) : (
+              <Link
+                to="/login"
+                className="hidden sm:flex p-2 hover:bg-primary rounded-lg transition-colors"
+                aria-label="Login"
+              >
+                <LogIn className="w-5 h-5" />
+              </Link>
+            )}
 
             {/* Cart */}
             <button
@@ -148,14 +160,25 @@ export function Navbar() {
             </Link>
           ))}
           <div className="pt-4 border-t border-border space-y-2">
-            <Link
-              to="/account"
-              onClick={() => setIsMenuOpen(false)}
-              className="flex items-center gap-3 py-3 px-4 text-foreground hover:bg-primary rounded-lg transition-colors"
-            >
-              <User className="w-5 h-5" />
-              My Account
-            </Link>
+            {user ? (
+              <Link
+                to="/account"
+                onClick={() => setIsMenuOpen(false)}
+                className="flex items-center gap-3 py-3 px-4 text-foreground hover:bg-primary rounded-lg transition-colors"
+              >
+                <User className="w-5 h-5" />
+                My Account
+              </Link>
+            ) : (
+              <Link
+                to="/login"
+                onClick={() => setIsMenuOpen(false)}
+                className="flex items-center gap-3 py-3 px-4 text-foreground hover:bg-primary rounded-lg transition-colors"
+              >
+                <LogIn className="w-5 h-5" />
+                Sign In
+              </Link>
+            )}
             <Link
               to="/wishlist"
               onClick={() => setIsMenuOpen(false)}

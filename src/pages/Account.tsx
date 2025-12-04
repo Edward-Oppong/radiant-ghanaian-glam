@@ -1,11 +1,12 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { User, Package, Heart, MapPin, LogOut, ChevronRight, Edit2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { User, Package, Heart, MapPin, LogOut, ChevronRight, Edit2, Loader2, Shield } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
-import { orders } from '@/data/mockData';
 import { useWishlistStore } from '@/store/wishlistStore';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 type Tab = 'profile' | 'orders' | 'wishlist' | 'addresses';
 
@@ -16,14 +17,7 @@ const tabs = [
   { id: 'addresses', name: 'Addresses', icon: MapPin },
 ] as const;
 
-const mockUser = {
-  firstName: 'Ama',
-  lastName: 'Koranteng',
-  email: 'ama.k@email.com',
-  phone: '+233 24 123 4567',
-};
-
-const statusColors = {
+const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
   processing: 'bg-blue-100 text-blue-800',
   shipped: 'bg-purple-100 text-purple-800',
@@ -31,9 +25,83 @@ const statusColors = {
   cancelled: 'bg-red-100 text-red-800',
 };
 
+interface Profile {
+  first_name: string | null;
+  last_name: string | null;
+  phone: string | null;
+}
+
+interface Order {
+  id: string;
+  status: string;
+  total: number;
+  created_at: string;
+  order_items: {
+    id: string;
+    product_name: string;
+    product_image: string | null;
+    quantity: number;
+    price: number;
+  }[];
+}
+
 export default function Account() {
+  const navigate = useNavigate();
+  const { user, signOut, isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('profile');
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
   const wishlistItems = useWishlistStore((state) => state.items);
+
+  useEffect(() => {
+    if (user) {
+      fetchProfile();
+      fetchOrders();
+    }
+  }, [user]);
+
+  const fetchProfile = async () => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('first_name, last_name, phone')
+      .eq('user_id', user?.id)
+      .maybeSingle();
+
+    if (data) {
+      setProfile(data);
+    }
+    setLoading(false);
+  };
+
+  const fetchOrders = async () => {
+    const { data } = await supabase
+      .from('orders')
+      .select(`
+        id,
+        status,
+        total,
+        created_at,
+        order_items (
+          id,
+          product_name,
+          product_image,
+          quantity,
+          price
+        )
+      `)
+      .eq('user_id', user?.id)
+      .order('created_at', { ascending: false });
+
+    if (data) {
+      setOrders(data as Order[]);
+    }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
 
   const formatPrice = (price: number) => `GH₵${price.toFixed(2)}`;
   const formatDate = (dateString: string) => {
@@ -43,6 +111,18 @@ export default function Account() {
       year: 'numeric',
     });
   };
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-accent" />
+        </div>
+      </Layout>
+    );
+  }
+
+  const displayName = profile?.first_name || user?.email?.split('@')[0] || 'User';
 
   return (
     <Layout>
@@ -57,14 +137,14 @@ export default function Account() {
               <div className="flex items-center gap-4 mb-6 pb-6 border-b border-border">
                 <div className="w-16 h-16 rounded-full bg-gradient-gold flex items-center justify-center">
                   <span className="text-2xl font-bold text-accent-foreground">
-                    {mockUser.firstName[0]}
+                    {displayName[0].toUpperCase()}
                   </span>
                 </div>
                 <div>
                   <h3 className="font-semibold">
-                    {mockUser.firstName} {mockUser.lastName}
+                    {profile?.first_name} {profile?.last_name}
                   </h3>
-                  <p className="text-sm text-muted-foreground">{mockUser.email}</p>
+                  <p className="text-sm text-muted-foreground">{user?.email}</p>
                 </div>
               </div>
 
@@ -86,13 +166,25 @@ export default function Account() {
                     <ChevronRight className="w-4 h-4 ml-auto" />
                   </button>
                 ))}
-                <Link
-                  to="/login"
+                
+                {isAdmin && (
+                  <Link
+                    to="/admin"
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left text-purple-600 hover:bg-purple-50 transition-all"
+                  >
+                    <Shield className="w-5 h-5" />
+                    Admin Dashboard
+                    <ChevronRight className="w-4 h-4 ml-auto" />
+                  </Link>
+                )}
+                
+                <button
+                  onClick={handleSignOut}
                   className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left text-destructive hover:bg-destructive/10 transition-all"
                 >
                   <LogOut className="w-5 h-5" />
                   Logout
-                </Link>
+                </button>
               </nav>
             </div>
           </aside>
@@ -111,19 +203,19 @@ export default function Account() {
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm text-muted-foreground mb-1">First Name</label>
-                    <p className="font-medium">{mockUser.firstName}</p>
+                    <p className="font-medium">{profile?.first_name || '-'}</p>
                   </div>
                   <div>
                     <label className="block text-sm text-muted-foreground mb-1">Last Name</label>
-                    <p className="font-medium">{mockUser.lastName}</p>
+                    <p className="font-medium">{profile?.last_name || '-'}</p>
                   </div>
                   <div>
                     <label className="block text-sm text-muted-foreground mb-1">Email</label>
-                    <p className="font-medium">{mockUser.email}</p>
+                    <p className="font-medium">{user?.email}</p>
                   </div>
                   <div>
                     <label className="block text-sm text-muted-foreground mb-1">Phone</label>
-                    <p className="font-medium">{mockUser.phone}</p>
+                    <p className="font-medium">{profile?.phone || '-'}</p>
                   </div>
                 </div>
 
@@ -136,42 +228,55 @@ export default function Account() {
 
             {activeTab === 'orders' && (
               <div className="space-y-4">
-                {orders.map((order) => (
-                  <div key={order.id} className="bg-card rounded-2xl p-6 shadow-soft">
-                    <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-                      <div>
-                        <p className="font-semibold">{order.id}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Placed on {formatDate(order.createdAt)}
-                        </p>
-                      </div>
-                      <span
-                        className={cn(
-                          'px-3 py-1 rounded-full text-sm font-medium capitalize',
-                          statusColors[order.status]
-                        )}
-                      >
-                        {order.status}
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap gap-4 mb-4">
-                      {order.items.map((item, index) => (
-                        <img
-                          key={index}
-                          src={item.image}
-                          alt={item.productName}
-                          className="w-16 h-16 object-cover rounded-lg"
-                        />
-                      ))}
-                    </div>
-                    <div className="flex items-center justify-between pt-4 border-t border-border">
-                      <p className="text-sm text-muted-foreground">
-                        {order.items.length} {order.items.length === 1 ? 'item' : 'items'}
-                      </p>
-                      <p className="font-semibold">{formatPrice(order.total)}</p>
-                    </div>
+                {orders.length === 0 ? (
+                  <div className="bg-card rounded-2xl p-12 shadow-soft text-center">
+                    <Package className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-muted-foreground">No orders yet</p>
+                    <Button variant="gold" className="mt-4" asChild>
+                      <Link to="/shop">Start Shopping</Link>
+                    </Button>
                   </div>
-                ))}
+                ) : (
+                  orders.map((order) => (
+                    <div key={order.id} className="bg-card rounded-2xl p-6 shadow-soft">
+                      <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+                        <div>
+                          <p className="font-semibold font-mono">#{order.id.slice(0, 8)}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Placed on {formatDate(order.created_at)}
+                          </p>
+                        </div>
+                        <span
+                          className={cn(
+                            'px-3 py-1 rounded-full text-sm font-medium capitalize',
+                            statusColors[order.status]
+                          )}
+                        >
+                          {order.status}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-4 mb-4">
+                        {order.order_items?.map((item) => (
+                          <div key={item.id} className="flex items-center gap-2">
+                            {item.product_image && (
+                              <img
+                                src={item.product_image}
+                                alt={item.product_name}
+                                className="w-16 h-16 object-cover rounded-lg"
+                              />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex items-center justify-between pt-4 border-t border-border">
+                        <p className="text-sm text-muted-foreground">
+                          {order.order_items?.length || 0} {(order.order_items?.length || 0) === 1 ? 'item' : 'items'}
+                        </p>
+                        <p className="font-semibold">{formatPrice(order.total)}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             )}
 
@@ -217,26 +322,9 @@ export default function Account() {
                     Add New
                   </Button>
                 </div>
-                <div className="border border-border rounded-xl p-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="font-medium">Home</p>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Ama Koranteng<br />
-                        15 Independence Avenue<br />
-                        Accra, Greater Accra<br />
-                        Ghana<br />
-                        +233 24 123 4567
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button variant="ghost" size="sm">Edit</Button>
-                      <Button variant="ghost" size="sm" className="text-destructive">Delete</Button>
-                    </div>
-                  </div>
-                  <span className="inline-block mt-3 px-2 py-1 bg-accent/20 text-accent text-xs rounded">
-                    Default
-                  </span>
+                <div className="text-center py-12">
+                  <MapPin className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-muted-foreground">No saved addresses yet</p>
                 </div>
               </div>
             )}
