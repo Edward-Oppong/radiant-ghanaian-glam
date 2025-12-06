@@ -20,12 +20,10 @@ export function FeaturedCategories() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
-          {displayCategories.map((category, index) => (
+          {displayCategories.map((category) => (
             <CategoryCard
               key={category.id}
               category={category}
-              variant={index === 0 ? 'large' : 'default'}
-              className={index === 0 ? 'row-span-2' : ''}
             />
           ))}
         </div>
