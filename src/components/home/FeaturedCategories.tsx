@@ -24,14 +24,8 @@ export function FeaturedCategories() {
             <CategoryCard
               key={category.id}
               category={category}
-              variant={index === 0 || index === 5 ? 'large' : 'default'}
-              className={
-                index === 0
-                  ? 'md:row-span-2'
-                  : index === 5
-                  ? 'md:row-span-2'
-                  : ''
-              }
+              variant={index === 0 ? 'large' : 'default'}
+              className={index === 0 ? 'row-span-2' : ''}
             />
           ))}
         </div>
