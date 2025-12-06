@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Product } from '@/data/mockData';
+import { Product } from '@/types/database';
 
 interface WishlistState {
   items: Product[];
