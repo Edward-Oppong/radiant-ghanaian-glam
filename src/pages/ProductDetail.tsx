@@ -11,11 +11,12 @@ import {
   Shield,
   Minus,
   Plus,
+  Loader2,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { ProductCard } from '@/components/product/ProductCard';
 import { Button } from '@/components/ui/button';
-import { getProductBySlug, getReviewsByProduct, getProductsByCategory, Product } from '@/data/mockData';
+import { useProduct, useRelatedProducts } from '@/hooks/useProducts';
 import { useCartStore } from '@/store/cartStore';
 import { useWishlistStore } from '@/store/wishlistStore';
 import { cn } from '@/lib/utils';
@@ -23,22 +24,37 @@ import { toast } from 'sonner';
 
 export default function ProductDetail() {
   const { slug } = useParams<{ slug: string }>();
-  const product = slug ? getProductBySlug(slug) : null;
-  const reviews = product ? getReviewsByProduct(product.id) : [];
-  const relatedProducts = product
-    ? getProductsByCategory(product.category).filter((p) => p.id !== product.id).slice(0, 4)
-    : [];
+  const { data: product, isLoading } = useProduct(slug || '');
+  const { data: relatedProducts = [] } = useRelatedProducts(
+    product?.category || '',
+    product?.id || ''
+  );
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [selectedVariant, setSelectedVariant] = useState<string | undefined>(
-    product?.variants?.[0]?.value
-  );
+  const [selectedVariant, setSelectedVariant] = useState<string | undefined>();
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<'description' | 'reviews'>('description');
 
   const addToCart = useCartStore((state) => state.addItem);
   const openCart = useCartStore((state) => state.openCart);
   const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlistStore();
+
+  // Set initial variant when product loads
+  useState(() => {
+    if (product?.variants?.[0]?.value && !selectedVariant) {
+      setSelectedVariant(product.variants[0].value);
+    }
+  });
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-16 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-accent" />
+        </div>
+      </Layout>
+    );
+  }
 
   if (!product) {
     return (
@@ -349,7 +365,7 @@ export default function ProductDetail() {
                       : 'text-muted-foreground hover:text-foreground'
                   )}
                 >
-                  Reviews ({reviews.length})
+                  Reviews ({product.reviewCount})
                   {activeTab === 'reviews' && (
                     <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
                   )}
@@ -366,46 +382,9 @@ export default function ProductDetail() {
               </div>
             ) : (
               <div className="space-y-6">
-                {reviews.length > 0 ? (
-                  reviews.map((review) => (
-                    <div key={review.id} className="border-b border-border pb-6">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center">
-                          <span className="font-medium text-accent">
-                            {review.userName[0]}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="font-medium">{review.userName}</p>
-                          <div className="flex items-center gap-2">
-                            <div className="flex">
-                              {Array.from({ length: 5 }).map((_, i) => (
-                                <Star
-                                  key={i}
-                                  className={cn(
-                                    'w-3 h-3',
-                                    i < review.rating
-                                      ? 'text-gold fill-gold'
-                                      : 'text-muted'
-                                  )}
-                                />
-                              ))}
-                            </div>
-                            {review.verified && (
-                              <span className="text-xs text-accent">Verified Purchase</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <h4 className="font-medium mb-2">{review.title}</h4>
-                      <p className="text-sm text-muted-foreground">{review.content}</p>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-muted-foreground text-center py-8">
-                    No reviews yet. Be the first to review this product!
-                  </p>
-                )}
+                <p className="text-muted-foreground text-center py-8">
+                  Reviews coming soon!
+                </p>
               </div>
             )}
           </div>
@@ -416,8 +395,8 @@ export default function ProductDetail() {
           <section className="mt-16">
             <h2 className="font-display text-2xl font-bold mb-8">You May Also Like</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-              {relatedProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
+              {relatedProducts.map((relatedProduct) => (
+                <ProductCard key={relatedProduct.id} product={relatedProduct} />
               ))}
             </div>
           </section>

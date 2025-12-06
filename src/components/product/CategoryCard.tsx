@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
-import { Category } from '@/data/mockData';
+import { Category } from '@/types/database';
 import { cn } from '@/lib/utils';
 
 interface CategoryCardProps {

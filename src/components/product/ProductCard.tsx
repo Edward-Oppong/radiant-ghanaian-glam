@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Heart, ShoppingBag, Star } from 'lucide-react';
-import { Product } from '@/data/mockData';
+import { Product } from '@/types/database';
 import { useCartStore } from '@/store/cartStore';
 import { useWishlistStore } from '@/store/wishlistStore';
 import { Button } from '@/components/ui/button';
@@ -10,9 +10,10 @@ import { toast } from 'sonner';
 interface ProductCardProps {
   product: Product;
   className?: string;
+  style?: React.CSSProperties;
 }
 
-export function ProductCard({ product, className }: ProductCardProps) {
+export function ProductCard({ product, className, style }: ProductCardProps) {
   const addToCart = useCartStore((state) => state.addItem);
   const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlistStore();
   
@@ -49,6 +50,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
     <Link
       to={`/product/${product.slug}`}
       className={cn('group block', className)}
+      style={style}
     >
       <div className="card-product">
         {/* Image Container */}

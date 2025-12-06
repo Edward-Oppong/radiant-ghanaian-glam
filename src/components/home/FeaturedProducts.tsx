@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
-import { getFeaturedProducts, getBestsellerProducts, Product } from '@/data/mockData';
+import { ArrowRight, Loader2 } from 'lucide-react';
+import { useFeaturedProducts, useBestsellerProducts } from '@/hooks/useProducts';
 import { ProductCard } from '@/components/product/ProductCard';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -11,10 +11,11 @@ type Tab = 'featured' | 'bestseller';
 export function FeaturedProducts() {
   const [activeTab, setActiveTab] = useState<Tab>('featured');
   
-  const featuredProducts = getFeaturedProducts();
-  const bestsellerProducts = getBestsellerProducts();
+  const { data: featuredProducts = [], isLoading: featuredLoading } = useFeaturedProducts();
+  const { data: bestsellerProducts = [], isLoading: bestsellerLoading } = useBestsellerProducts();
   
   const products = activeTab === 'featured' ? featuredProducts : bestsellerProducts;
+  const isLoading = activeTab === 'featured' ? featuredLoading : bestsellerLoading;
 
   return (
     <section className="py-16 md:py-24">
@@ -56,18 +57,27 @@ export function FeaturedProducts() {
           </div>
         </div>
 
-        {/* Products Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-          {products.slice(0, 8).map((product, index) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              className="animate-fade-up"
-              // @ts-ignore
-              style={{ animationDelay: `${index * 0.1}s` }}
-            />
-          ))}
-        </div>
+        {/* Loading State */}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="w-8 h-8 animate-spin text-accent" />
+          </div>
+        ) : products.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+            {products.slice(0, 8).map((product, index) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                className="animate-fade-up"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-16">
+            <p className="text-muted-foreground">No products found.</p>
+          </div>
+        )}
 
         {/* View All Button */}
         <div className="text-center mt-12">

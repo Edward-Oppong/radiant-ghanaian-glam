@@ -1,7 +1,9 @@
-import { categories } from '@/data/mockData';
+import { useCategories } from '@/hooks/useProducts';
 import { CategoryCard } from '@/components/product/CategoryCard';
+import { Loader2 } from 'lucide-react';
 
 export function FeaturedCategories() {
+  const { data: categories = [], isLoading } = useCategories();
   const displayCategories = categories.slice(0, 6);
 
   return (
@@ -19,14 +21,24 @@ export function FeaturedCategories() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
-          {displayCategories.map((category) => (
-            <CategoryCard
-              key={category.id}
-              category={category}
-            />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="w-8 h-8 animate-spin text-accent" />
+          </div>
+        ) : displayCategories.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
+            {displayCategories.map((category) => (
+              <CategoryCard
+                key={category.id}
+                category={category}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-16">
+            <p className="text-muted-foreground">No categories found.</p>
+          </div>
+        )}
       </div>
     </section>
   );

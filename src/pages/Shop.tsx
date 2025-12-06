@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Filter, SlidersHorizontal, Grid3X3, LayoutGrid, X, ChevronDown } from 'lucide-react';
+import { Filter, SlidersHorizontal, Grid3X3, LayoutGrid, X, ChevronDown, Loader2 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { ProductCard } from '@/components/product/ProductCard';
 import { Button } from '@/components/ui/button';
-import { products, categories, getCategoryBySlug } from '@/data/mockData';
+import { useProducts, useCategories } from '@/hooks/useProducts';
 import { cn } from '@/lib/utils';
 
 type SortOption = 'featured' | 'newest' | 'price-low' | 'price-high' | 'rating';
@@ -33,16 +33,17 @@ export default function Shop() {
   const [priceRange, setPriceRange] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const categorySlug = searchParams.get('category');
-  const currentCategory = categorySlug ? getCategoryBySlug(categorySlug) : null;
+  const categorySlug = searchParams.get('category') || undefined;
+  
+  const { data: products = [], isLoading: productsLoading } = useProducts(categorySlug);
+  const { data: categories = [], isLoading: categoriesLoading } = useCategories();
+  
+  const currentCategory = categorySlug 
+    ? categories.find(c => c.slug === categorySlug) 
+    : null;
 
   const filteredProducts = useMemo(() => {
     let filtered = [...products];
-
-    // Filter by category
-    if (categorySlug) {
-      filtered = filtered.filter((p) => p.category === categorySlug);
-    }
 
     // Filter by price
     const range = priceRanges.find((r) => r.id === priceRange);
@@ -56,15 +57,13 @@ export default function Shop() {
       filtered = filtered.filter(
         (p) =>
           p.name.toLowerCase().includes(query) ||
-          p.description.toLowerCase().includes(query) ||
-          p.tags.some((t) => t.toLowerCase().includes(query))
+          p.description.toLowerCase().includes(query)
       );
     }
 
     // Sort
     switch (sortBy) {
       case 'newest':
-        // In real app, would sort by date
         filtered.reverse();
         break;
       case 'price-low':
@@ -77,12 +76,11 @@ export default function Shop() {
         filtered.sort((a, b) => b.rating - a.rating);
         break;
       default:
-        // Featured - no change
         break;
     }
 
     return filtered;
-  }, [categorySlug, priceRange, searchQuery, sortBy]);
+  }, [products, priceRange, searchQuery, sortBy]);
 
   const handleCategoryChange = (slug: string | null) => {
     if (slug) {
@@ -92,6 +90,8 @@ export default function Shop() {
     }
     setIsFilterOpen(false);
   };
+
+  const isLoading = productsLoading || categoriesLoading;
 
   return (
     <Layout>
@@ -253,8 +253,12 @@ export default function Shop() {
               Showing {filteredProducts.length} products
             </p>
 
-            {/* Products Grid */}
-            {filteredProducts.length > 0 ? (
+            {/* Loading State */}
+            {isLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="w-8 h-8 animate-spin text-accent" />
+              </div>
+            ) : filteredProducts.length > 0 ? (
               <div
                 className={cn(
                   'grid gap-4 md:gap-6',
