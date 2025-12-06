@@ -5,7 +5,7 @@ export function FeaturedCategories() {
   const displayCategories = categories.slice(0, 6);
 
   return (
-    <section className="py-16 md:py-24 bg-cream">
+    <section className="py-10 md:py-16 bg-cream">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <span className="text-accent text-sm font-medium tracking-wide uppercase">
