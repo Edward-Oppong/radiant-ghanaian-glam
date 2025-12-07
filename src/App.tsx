@@ -25,6 +25,7 @@ import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProducts from "./pages/admin/AdminProducts";
+import AdminCategories from "./pages/admin/AdminCategories";
 import AdminOrders from "./pages/admin/AdminOrders";
 import NotFound from "./pages/NotFound";
 
@@ -73,6 +74,11 @@ const App = () => (
             <Route path="/admin/products" element={
               <ProtectedRoute requireAdmin>
                 <AdminProducts />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/categories" element={
+              <ProtectedRoute requireAdmin>
+                <AdminCategories />
               </ProtectedRoute>
             } />
             <Route path="/admin/orders" element={

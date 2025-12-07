@@ -261,9 +261,17 @@ export default function AdminProducts() {
             <span className="text-muted-foreground">/</span>
             <span className="font-medium">Product Management</span>
           </div>
-          <Link to="/admin">
-            <Button variant="outline">Back to Dashboard</Button>
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link to="/admin/categories" className="text-sm text-muted-foreground hover:text-foreground">
+              Categories
+            </Link>
+            <Link to="/admin/orders" className="text-sm text-muted-foreground hover:text-foreground">
+              Orders
+            </Link>
+            <Link to="/admin">
+              <Button variant="outline">Dashboard</Button>
+            </Link>
+          </div>
         </div>
       </header>
 
