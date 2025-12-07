@@ -6,28 +6,44 @@ export function useProducts(categorySlug?: string) {
   return useQuery({
     queryKey: ['products', categorySlug],
     queryFn: async (): Promise<Product[]> => {
-      let query = supabase
-        .from('products')
-        .select(`
-          *,
-          categories!inner(slug)
-        `);
-
       if (categorySlug) {
-        query = query.eq('categories.slug', categorySlug);
+        // When filtering by category, use inner join
+        const { data, error } = await supabase
+          .from('products')
+          .select(`
+            *,
+            categories!inner(slug)
+          `)
+          .eq('categories.slug', categorySlug);
+
+        if (error) {
+          console.error('Error fetching products:', error);
+          throw error;
+        }
+
+        return (data || []).map((p) => {
+          const categoryData = p.categories as unknown as { slug: string } | null;
+          return transformDbProduct(p, categoryData?.slug || '');
+        });
+      } else {
+        // When fetching all products, use left join
+        const { data, error } = await supabase
+          .from('products')
+          .select(`
+            *,
+            categories(slug)
+          `);
+
+        if (error) {
+          console.error('Error fetching products:', error);
+          throw error;
+        }
+
+        return (data || []).map((p) => {
+          const categoryData = p.categories as unknown as { slug: string } | null;
+          return transformDbProduct(p, categoryData?.slug || '');
+        });
       }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Error fetching products:', error);
-        throw error;
-      }
-
-      return (data || []).map((p) => {
-        const categoryData = p.categories as unknown as { slug: string } | null;
-        return transformDbProduct(p, categoryData?.slug || '');
-      });
     },
   });
 }
