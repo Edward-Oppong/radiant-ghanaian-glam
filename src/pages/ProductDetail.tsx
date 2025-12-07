@@ -137,9 +137,12 @@ export default function ProductDetail() {
           <div className="space-y-4">
             <div className="relative aspect-square bg-secondary rounded-2xl overflow-hidden">
               <img
-                src={product.images[currentImageIndex]}
+                src={product.images[currentImageIndex] || '/placeholder.svg'}
                 alt={product.name}
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/placeholder.svg';
+                }}
               />
 
               {/* Badges */}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Package, ShoppingCart, Users, TrendingUp, LogOut, Loader2 } from 'lucide-react';
+import { Package, ShoppingCart, Users, TrendingUp, LogOut, Loader2, FolderOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -170,7 +170,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Link
             to="/admin/products"
             className="bg-background rounded-2xl p-6 border border-border hover:border-accent transition-colors group"
@@ -182,6 +182,21 @@ export default function AdminDashboard() {
               <div>
                 <h3 className="font-display text-lg font-semibold">Manage Products</h3>
                 <p className="text-sm text-muted-foreground">Add, edit, or delete products</p>
+              </div>
+            </div>
+          </Link>
+
+          <Link
+            to="/admin/categories"
+            className="bg-background rounded-2xl p-6 border border-border hover:border-accent transition-colors group"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-green-100 rounded-xl flex items-center justify-center group-hover:bg-green-200 transition-colors">
+                <FolderOpen className="w-7 h-7 text-green-600" />
+              </div>
+              <div>
+                <h3 className="font-display text-lg font-semibold">Manage Categories</h3>
+                <p className="text-sm text-muted-foreground">Organize your product categories</p>
               </div>
             </div>
           </Link>
