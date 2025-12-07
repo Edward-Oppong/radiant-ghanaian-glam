@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Edit, Trash2, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Image as ImageIcon, Loader2, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -51,6 +51,10 @@ export default function AdminProducts() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -58,7 +62,6 @@ export default function AdminProducts() {
     price: '',
     original_price: '',
     category_id: '',
-    images: '',
     stock: '',
     is_featured: false,
     is_bestseller: false,
@@ -93,6 +96,54 @@ export default function AdminProducts() {
     }
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadingImages(true);
+    const newImages: string[] = [];
+
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `product-images/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('products')
+          .upload(filePath, file);
+
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          toast.error(`Failed to upload ${file.name}`);
+          continue;
+        }
+
+        const { data: urlData } = supabase.storage
+          .from('products')
+          .getPublicUrl(filePath);
+
+        newImages.push(urlData.publicUrl);
+      }
+
+      setUploadedImages(prev => [...prev, ...newImages]);
+      toast.success(`${newImages.length} image(s) uploaded successfully`);
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Failed to upload images');
+    } finally {
+      setUploadingImages(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setUploadedImages(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -103,7 +154,7 @@ export default function AdminProducts() {
       price: parseFloat(formData.price),
       original_price: formData.original_price ? parseFloat(formData.original_price) : null,
       category_id: formData.category_id || null,
-      images: formData.images ? formData.images.split(',').map(s => s.trim()) : [],
+      images: uploadedImages,
       stock: formData.stock ? parseInt(formData.stock) : 0,
       is_featured: formData.is_featured,
       is_bestseller: formData.is_bestseller,
@@ -141,6 +192,7 @@ export default function AdminProducts() {
 
   const handleEdit = (product: Product) => {
     setEditingProduct(product);
+    setUploadedImages(product.images || []);
     setFormData({
       name: product.name,
       slug: product.slug,
@@ -148,7 +200,6 @@ export default function AdminProducts() {
       price: product.price.toString(),
       original_price: product.original_price?.toString() || '',
       category_id: product.category_id || '',
-      images: product.images?.join(', ') || '',
       stock: product.stock?.toString() || '',
       is_featured: product.is_featured || false,
       is_bestseller: product.is_bestseller || false,
@@ -172,6 +223,7 @@ export default function AdminProducts() {
 
   const resetForm = () => {
     setEditingProduct(null);
+    setUploadedImages([]);
     setFormData({
       name: '',
       slug: '',
@@ -179,7 +231,6 @@ export default function AdminProducts() {
       price: '',
       original_price: '',
       category_id: '',
-      images: '',
       stock: '',
       is_featured: false,
       is_bestseller: false,
@@ -330,15 +381,60 @@ export default function AdminProducts() {
                   </select>
                 </div>
 
+                {/* Image Upload Section */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">Image URLs (comma separated)</label>
-                  <textarea
-                    value={formData.images}
-                    onChange={(e) => setFormData({ ...formData, images: e.target.value })}
-                    rows={2}
-                    placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
-                    className="w-full px-4 py-3 bg-secondary rounded-lg border-0 focus:ring-2 focus:ring-accent outline-none resize-none"
-                  />
+                  <label className="block text-sm font-medium mb-2">Product Images</label>
+                  <div className="space-y-3">
+                    {/* Upload Button */}
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-accent transition-colors"
+                    >
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                      />
+                      {uploadingImages ? (
+                        <div className="flex items-center justify-center gap-2">
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <span>Uploading...</span>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center gap-2">
+                          <Upload className="w-8 h-8 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">
+                            Click to upload images
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Image Previews */}
+                    {uploadedImages.length > 0 && (
+                      <div className="grid grid-cols-4 gap-2">
+                        {uploadedImages.map((url, index) => (
+                          <div key={index} className="relative group">
+                            <img
+                              src={url}
+                              alt={`Product ${index + 1}`}
+                              className="w-full h-20 object-cover rounded-lg"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeImage(index)}
+                              className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex gap-6">
@@ -459,7 +555,7 @@ export default function AdminProducts() {
                           </Button>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon" className="text-red-600">
+                              <Button variant="ghost" size="icon" className="text-destructive">
                                 <Trash2 className="w-4 h-4" />
                               </Button>
                             </AlertDialogTrigger>
@@ -474,7 +570,7 @@ export default function AdminProducts() {
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                                 <AlertDialogAction
                                   onClick={() => handleDelete(product.id)}
-                                  className="bg-red-600 hover:bg-red-700"
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                 >
                                   Delete
                                 </AlertDialogAction>
