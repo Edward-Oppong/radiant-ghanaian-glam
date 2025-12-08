@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ImageIcon } from 'lucide-react';
 import { Category } from '@/types/database';
 import { cn } from '@/lib/utils';
 
@@ -9,7 +10,12 @@ interface CategoryCardProps {
   variant?: 'default' | 'large';
 }
 
+const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600';
+
 export function CategoryCard({ category, className, variant = 'default' }: CategoryCardProps) {
+  const [imageError, setImageError] = useState(false);
+  const imageUrl = category.image && !imageError ? category.image : FALLBACK_IMAGE;
+
   return (
     <Link
       to={`/shop?category=${category.slug}`}
@@ -20,11 +26,18 @@ export function CategoryCard({ category, className, variant = 'default' }: Categ
       )}
     >
       {/* Background Image */}
-      <img
-        src={category.image}
-        alt={category.name}
-        className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-      />
+      {imageUrl ? (
+        <img
+          src={imageUrl}
+          alt={category.name}
+          className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+          onError={() => setImageError(true)}
+        />
+      ) : (
+        <div className="absolute inset-0 w-full h-full bg-secondary flex items-center justify-center">
+          <ImageIcon className="w-16 h-16 text-muted-foreground" />
+        </div>
+      )}
       
       {/* Gradient Overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/30 to-transparent" />
