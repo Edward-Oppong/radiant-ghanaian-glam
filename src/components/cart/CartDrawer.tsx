@@ -110,14 +110,14 @@ export function CartDrawer() {
               <span className="font-semibold text-lg">{formatPrice(getTotal())}</span>
             </div>
             <p className="text-xs text-muted-foreground text-center">
-              Shipping calculated at checkout
+              You'll complete your order via WhatsApp
             </p>
             <div className="grid grid-cols-2 gap-3">
               <Button variant="outline" onClick={closeCart} asChild>
                 <Link to="/cart">View Cart</Link>
               </Button>
               <Button variant="gold" onClick={closeCart} asChild>
-                <Link to="/checkout">Checkout</Link>
+                <Link to="/checkout">Order via WhatsApp</Link>
               </Button>
             </div>
           </div>
