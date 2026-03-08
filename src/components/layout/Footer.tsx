@@ -137,21 +137,14 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Payment Methods */}
         <div className="mt-12 pt-8 border-t border-background/10">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-sm text-background/50">
               © 2024 Lumière Beauty. All rights reserved.
             </p>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-background/50">We accept:</span>
-              <div className="flex gap-2">
-                <div className="px-3 py-1 bg-background/10 rounded text-xs font-medium">MTN MoMo</div>
-                <div className="px-3 py-1 bg-background/10 rounded text-xs font-medium">Vodafone Cash</div>
-                <div className="px-3 py-1 bg-background/10 rounded text-xs font-medium">Visa</div>
-                <div className="px-3 py-1 bg-background/10 rounded text-xs font-medium">Mastercard</div>
-              </div>
-            </div>
+            <p className="text-sm text-background/50">
+              Orders placed via WhatsApp
+            </p>
           </div>
         </div>
       </div>
