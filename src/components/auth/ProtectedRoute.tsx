@@ -16,14 +16,15 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
 
   useEffect(() => {
     if (requireAdmin && user) {
-      // Server-side admin role verification
-      supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' })
-        .then(({ data }) => {
+      const verifyAdmin = async () => {
+        try {
+          const { data } = await supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' });
           setAdminVerified(!!data);
-        })
-        .catch(() => {
+        } catch {
           setAdminVerified(false);
-        });
+        }
+      };
+      verifyAdmin();
     }
   }, [requireAdmin, user]);
 
