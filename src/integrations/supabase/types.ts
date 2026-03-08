@@ -51,6 +51,7 @@ export type Database = {
           product_image: string | null
           product_name: string
           quantity: number
+          user_id: string | null
           variant: string | null
         }
         Insert: {
@@ -62,6 +63,7 @@ export type Database = {
           product_image?: string | null
           product_name: string
           quantity: number
+          user_id?: string | null
           variant?: string | null
         }
         Update: {
@@ -73,6 +75,7 @@ export type Database = {
           product_image?: string | null
           product_name?: string
           quantity?: number
+          user_id?: string | null
           variant?: string | null
         }
         Relationships: [
